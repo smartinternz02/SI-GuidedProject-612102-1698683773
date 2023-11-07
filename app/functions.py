@@ -3,6 +3,8 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
+from dash import html
+
 
 with open('D:\projects\customer\SI-GuidedProject-612102-1698683773\model.pkl', 'rb') as kmeans_file:
     model = pickle.load(kmeans_file)
@@ -74,17 +76,18 @@ def segment(rfm_data):
 
 def customer_type(row):
     if row['RFMClass'] == '111':
-        return 'Champions'
+        return 'Top Tier'
     elif row['F_Quartile'] == 1:
-        return 'Loyal Customers'
+        return 'Frequent Supporters'
     elif row['M_Quartile'] == 1:
-        return 'Big Spenders'
+        return 'High Spenders'
     elif row['RFMClass'] == '322':
-        return 'About to Sleep'
+        return 'Inactive But Potentially Returning'
     elif row['RFMClass'] == '444':
-        return 'Lost Customers'
+        return 'Inactive and Unlikely to Return'
     else:
         return 'Other'
+
     
 def RFM_Segment(rfm_data):
     rfm_data['RFM_Segment'] = rfm_data.apply(customer_type, axis=1)
@@ -98,6 +101,9 @@ def customer_habit(df,rfm_data):
     data.columns = ['CustomerID', 'UniqueProducts', 'MostFrequentProduct']
     segmented = pd.merge(rfm_data, data, on='CustomerID', how='left')
     return segmented
+
+segmented = customer_habit(df,rfm_data)
+
 def stats(segmented):
     cluster_stats = segmented.groupby('RFM_Segment').agg({
     'Recency': 'mean',
@@ -105,10 +111,14 @@ def stats(segmented):
     'Monetary': 'mean'
 }).reset_index()
 
-    print("Cluster Characteristics:")
-    print(cluster_stats)
+    stats_html = html.Table(
+        # Header
+        [html.Tr([html.Th(col) for col in cluster_stats.columns])] +
+        # Body
+        [html.Tr([html.Td(cluster_stats.iloc[i][col]) for col in cluster_stats.columns]) for i in range(len(cluster_stats))]
+    )
+    return stats_html
 
-segmented = customer_habit(df,rfm_data)
 
 def profile(segmented):
     sample_profiles = segmented.groupby('RFM_Segment').apply(lambda x: x.sample(1)).reset_index(drop=True)
@@ -150,27 +160,18 @@ Their monetary value is high, indicating higher spending.
     else:
        print("Unknown Cluster")
 
+def customer_d(id,df = process()):
+    customer_data = df[df['CustomerID'] == id]
+    return customer_data
 
-def show_customer_details(customer_id, segmented, df):
+def show_customer_details(customer_id, segmented):
     customer_data = segmented[segmented['CustomerID'] == customer_id]
 
     # Display customer details
-    print("Customer Details:")
-    print(customer_data[['CustomerID', 'Recency', 'Frequency', 'Monetary', 'RFM_Segment', 'UniqueProducts', 'MostFrequentProduct']])
+    customer_details = customer_data[['CustomerID', 'Recency', 'Frequency', 'Monetary', 'RFM_Segment', 'UniqueProducts', 'MostFrequentProduct']]
 
-    # Display RFM distribution
-    fig_rfm = px.scatter(
-        segmented,
-        x='Recency',
-        y='Frequency',
-        color='RFM_Segment',
-        size='Monetary',
-        title='Customer Segmentation - Recency vs Frequency',
-        labels={'Recency': 'Recency', 'Frequency': 'Frequency', 'Monetary': 'Monetary'},
-        hover_data=['CustomerID']
-    )
-    fig_rfm.show()
-
+    return customer_details
+   
     # Display top products for the customer's segment
     top_products_customer_segment = df[df['RFM_Segment'] == customer_data['RFM_Segment'].iloc[0]]
     top_products = top_products_customer_segment.groupby('MostFrequentProduct')['CustomerID'].count().sort_values(ascending=False)[:5]
@@ -182,8 +183,6 @@ def show_customer_details(customer_id, segmented, df):
     fig_pie = px.pie(customer_type_counts, names=customer_type_counts.index, title='Customer Type Distribution')
     fig_pie.show()
 
-ID = float(12346)
-print(show_customer_details(ID, segmented, segmented))
 
 
 def graph1(segmented):
@@ -191,6 +190,7 @@ def graph1(segmented):
     fig = px.scatter(segmented, x='Recency', y='Frequency', color='RFM_Segment',
                      size='Monetary', title='Customer Segmentation - Recency vs Frequency',
                      labels={'Recency': 'Recency', 'Frequency': 'Frequency', 'Monetary': 'Monetary'})
+   
     return fig
 #fig1 = graph1(rfm_data)
 #fig1.show()
@@ -213,18 +213,6 @@ def graph3(segmented):
 
 #fig3 = graph3(rfm_data)
 #fig3.show()
-
-def graph4(segmented):
-    # Plotting a pie chart of customer types
-    customer_type_counts = segmented['RFM_Segment'].value_counts()
-    labels = customer_type_counts.index
-    values = customer_type_counts.values
-    fig = go.Figure(data=[go.Pie(labels=labels, values=values)])
-    fig.update_layout(title='Distribution of Customer Types')
-    return fig
-
-#fig4 = graph4(rfm_data)
-#fig4.show()
 
 def graph5(segmented):
     # Plotting a 3D scatter plot of Recency, Frequency, and Monetary with color-coded clusters
@@ -292,3 +280,57 @@ def cluster_size_bar_chart(X):
 
 #fig10 = cluster_size_bar_chart(rfm_data)
 #fig10.show()
+
+
+def time_series_plot(customer_data):
+    fig = px.line(customer_data, x='InvoiceDate', y='TotalPrice', title='Time Series Plot of Purchases Over Time')
+    return fig
+
+def top_products_chart(customer_data, top_n=5):
+    top_products = customer_data.groupby('Description')['Quantity'].sum().sort_values(ascending=False).head(top_n)
+    fig = px.bar(x=top_products.index, y=top_products.values, labels={'x': 'Product', 'y': 'Quantity'},
+                 title=f'Top {top_n} Products Purchased by the Customer')
+    return fig
+
+def purchase_frequency_histogram(customer_data):
+    fig = px.histogram(customer_data, x='InvoiceDate', nbins=20, title='Purchase Frequency Distribution')
+    return fig
+
+def monetary_value_histogram(customer_data):
+    fig = px.histogram(customer_data, x='TotalPrice', nbins=20, title='Monetary Value Distribution')
+    return fig
+
+def rfm_radar_chart(id):
+    df = rfm(process())
+    customer_data = df[df['CustomerID'] == id]
+
+    fig = go.Figure()
+
+    # Normalize the RFM values
+    normalized_rfm = (customer_data[['Recency', 'Frequency', 'Monetary']] - customer_data[['Recency', 'Frequency', 'Monetary']].min()) / (customer_data[['Recency', 'Frequency', 'Monetary']].max() - customer_data[['Recency', 'Frequency', 'Monetary']].min())
+
+    # Add radar chart traces
+    fig.add_trace(go.Scatterpolar(
+        r=normalized_rfm.iloc[0].values,
+        theta=['Recency', 'Frequency', 'Monetary'],
+        fill='toself',
+        name='RFM Radar Chart'
+    ))
+
+    fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])), title='RFM Radar Chart')
+    
+    return fig
+
+
+def parse_rfm_input(r_input, f_input, m_input):
+    try:
+        # Convert inputs to integers
+        r_value = int(r_input)
+        f_value = int(f_input)
+        m_value = int(m_input)
+
+        # Return an array with RFM values
+        return [r_value, f_value, m_value]
+    except ValueError:
+        # Handle the case where inputs are not valid integers
+        return None
