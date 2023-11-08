@@ -20,7 +20,7 @@ df = pd.read_csv('D:/projects/customer/Customer-Segmentation/Data/Retail.csv',  
 X = pd.read_csv('D:/projects/customer/Customer-Segmentation/Data/X.csv')
 # Create a Dash web application
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.COSMO],suppress_callback_exceptions=True)
-
+server = app.server
 
 
 graph1_component = dcc.Graph(id='graph1')
