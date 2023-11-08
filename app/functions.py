@@ -289,9 +289,10 @@ def time_series_plot(customer_data):
 
 def top_products_chart(customer_data, top_n=5):
     top_products = customer_data.groupby('Description')['Quantity'].sum().sort_values(ascending=False).head(top_n)
-    fig = px.bar(x=top_products.index, y=top_products.values, labels={'x': 'Product', 'y': 'Quantity'},
+    fig = px.bar(data_frame=top_products.reset_index(), x='Description', y='Quantity', labels={'Description': 'Product', 'Quantity': 'Quantity'},
                  title=f'Top {top_n} Products Purchased by the Customer')
     return fig
+
 
 def purchase_frequency_histogram(customer_data):
     fig = px.histogram(customer_data, x='InvoiceDate', nbins=20, title='Purchase Frequency Distribution')
@@ -335,3 +336,5 @@ def parse_rfm_input(r_input, f_input, m_input):
     except ValueError:
         # Handle the case where inputs are not valid integers
         return None
+
+

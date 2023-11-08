@@ -1,0 +1,14 @@
+# Environments
+app/.env
+app/.venv
+app/env/
+app/venv/
+app/ENV/
+app/env.bak/
+app/venv.bak/
+app/__pycache__
+
+# mypy
+app/.__pycache__/
+app/__pycache__/
+#app\env

@@ -5,22 +5,22 @@ import pandas as pd
 import pickle
 import plotly.express as px
 import plotly.graph_objects as go
-import datetime
 import dash_bootstrap_components as dbc    # pip install dash-bootstrap-components
 from functions import *
 
 # Load the model and data
-with open('D:\projects\customer\SI-GuidedProject-612102-1698683773\model.pkl', 'rb') as kmeans_file:
+with open('D:\projects\customer\Customer-Segmentation\model.pkl', 'rb') as kmeans_file:
     model = pickle.load(kmeans_file)
 
-with open('D:/projects/customer/SI-GuidedProject-612102-1698683773/scaler.pkl', 'rb') as scaler_file:
+with open('D:\projects\customer\Customer-Segmentation\scaler.pkl', 'rb') as scaler_file:
     scaler = pickle.load(scaler_file)
 
-rfm_data = pd.read_csv('D:/projects/customer/SI-GuidedProject-612102-1698683773/Data/rfm.csv')
-df = pd.read_csv('D:/projects/customer/SI-GuidedProject-612102-1698683773/Data/Retail.csv',  encoding="ISO-8859-1")
-X = pd.read_csv('D:/projects/customer/SI-GuidedProject-612102-1698683773/Data/X.csv')
+rfm_data = pd.read_csv('D:/projects/customer/Customer-Segmentation/Data/rfm.csv')
+df = pd.read_csv('D:/projects/customer/Customer-Segmentation/Data/Retail.csv',  encoding="ISO-8859-1")
+X = pd.read_csv('D:/projects/customer/Customer-Segmentation/Data/X.csv')
 # Create a Dash web application
-app = dash.Dash(__name__,external_stylesheets=[dbc.themes.COSMO])
+app = dash.Dash(__name__,external_stylesheets=[dbc.themes.COSMO],suppress_callback_exceptions=True)
+
 
 
 graph1_component = dcc.Graph(id='graph1')
@@ -92,7 +92,7 @@ def show_customer_details_callback(n_clicks, customer_id):
 
 @app.callback(Output('cluster-prediction-output', 'children'), Input('predict-cluster-button', 'n_clicks'), [State('r-input', 'value'), State('f-input', 'value'), State('m-input', 'value')])
 def predict_cluster(n_clicks, r_input, f_input, m_input):
-    print(f"n_clicks: {n_clicks}, r_input: {r_input}, f_input: {f_input}, m_input: {m_input}")
+    #print(f"n_clicks: {n_clicks}, r_input: {r_input}, f_input: {f_input}, m_input: {m_input}")
 
     if n_clicks and r_input is not None and f_input is not None and m_input is not None:
         # Combine the input RFM values
@@ -110,35 +110,64 @@ def predict_cluster(n_clicks, r_input, f_input, m_input):
         # Combine the input RFM values
         input_data = pd.DataFrame({'Recency': [rfm_values[0]], 'Frequency': [rfm_values[1]], 'Monetary': [rfm_values[2]]})
 
-        print("Input data:")
-        print(input_data)
-
+        #print("Input data:")
+        #print(input_data)
+        B = X[['Recency', 'Frequency', 'Monetary']]
         # Append input_data to rfm_data
 # Append input_data to rfm_data
-        combined_data = pd.concat([X,input_data], ignore_index=True)
-        print("Combined data:")
-        combined_data = combined_data[['Recency', 'Frequency', 'Monetary']]
-        print(combined_data.tail())
+        combined_data = pd.concat([B,input_data], ignore_index=True)
+        #print("Combined data:")
+        #combined_data = combined_data[['Recency', 'Frequency', 'Monetary']]
+        #print(combined_data.tail())
+
         # Standardize the combined data using the same scaler
         combined_data_scaled = scaler.transform(combined_data)
 
-        print(combined_data_scaled.head())
+        #print(combined_data_scaled)
         # Predict the cluster for the input RFM values
         predicted_cluster = model.predict(combined_data_scaled)[-1]
-        print(f"Predicted cluster: {predicted_cluster}")
+        #print(f"Predicted cluster: {predicted_cluster}")
 
-        # Get the cluster centers
-        cluster_centers = model.cluster_centers_
-
-        print("Cluster centers:")
-        print(cluster_centers)
+        
         # Create the layout to display the predicted cluster
         cluster_details_layout = html.Div([
             html.Label("Predicted Cluster:"),
             html.P(f"Cluster {predicted_cluster}")
         ])
 
-        return [user_input_layout, cluster_details_layout]
+        if predicted_cluster == 0:
+            description = "High Recency, Low Frequency, Low Monetary. "
+            additional_description = '''
+            These customers have high recency, meaning they haven't made a purchase recently.
+            They have low frequency, indicating infrequent purchases.
+            Their monetary value is also low, suggesting smaller spending.
+            '''
+        elif predicted_cluster == 1:
+            description = "Moderate Recency, Moderate Frequency, Moderate Monetary. "
+            additional_description = '''
+            These customers have moderate recency, indicating a moderate time since their last purchase.
+            They make purchases with a moderate frequency.
+            Their monetary value is also at a moderate level.
+            '''
+        elif predicted_cluster == 2:
+            description = "Low Recency, High Frequency, High Monetary. "
+            additional_description = '''
+            These customers have low recency, meaning they recently made a purchase.
+            They exhibit high frequency, suggesting frequent purchases.
+            Their monetary value is high, indicating higher spending.
+            '''
+        else:
+            description = "Unknown Cluster"
+            additional_description = "No description available."
+
+        cluster_description_layout = html.Div([
+            html.Label("Cluster Description:"),
+            html.P(description),
+            html.P(additional_description)
+        ])
+
+
+        return [user_input_layout, cluster_details_layout, cluster_description_layout]
     else:
         return html.P("Invalid input. Please enter valid RFM values.")
 
