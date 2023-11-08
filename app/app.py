@@ -9,15 +9,15 @@ import dash_bootstrap_components as dbc    # pip install dash-bootstrap-componen
 from functions import *
 
 # Load the model and data
-with open('D:\projects\customer\Customer-Segmentation\model.pkl', 'rb') as kmeans_file:
+with open('pickles\model.pkl', 'rb') as kmeans_file:
     model = pickle.load(kmeans_file)
 
-with open('D:\projects\customer\Customer-Segmentation\scaler.pkl', 'rb') as scaler_file:
+with open('pickles\scaler.pkl', 'rb') as scaler_file:
     scaler = pickle.load(scaler_file)
 
-rfm_data = pd.read_csv('D:/projects/customer/Customer-Segmentation/Data/rfm.csv')
-df = pd.read_csv('D:/projects/customer/Customer-Segmentation/Data/Retail.csv',  encoding="ISO-8859-1")
-X = pd.read_csv('D:/projects/customer/Customer-Segmentation/Data/X.csv')
+rfm_data = pd.read_csv('Data/rfm.csv')
+df = pd.read_csv('Data/Retail.csv',  encoding="ISO-8859-1")
+X = pd.read_csv('Data/X.csv')
 # Create a Dash web application
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.COSMO],suppress_callback_exceptions=True)
 server = app.server

@@ -6,18 +6,18 @@ import matplotlib.pyplot as plt
 from dash import html
 
 
-with open('D:\projects\customer\SI-GuidedProject-612102-1698683773\model.pkl', 'rb') as kmeans_file:
+with open('pickles\model.pkl', 'rb') as kmeans_file:
     model = pickle.load(kmeans_file)
 
-with open('D:/projects/customer/SI-GuidedProject-612102-1698683773/scaler.pkl', 'rb') as scaler_file:
+with open('pickles\scaler.pkl', 'rb') as scaler_file:
     scaler = pickle.load(scaler_file)
 
-rfm_data = pd.read_csv('D:/projects/customer/SI-GuidedProject-612102-1698683773/Data/rfm.csv')
-df = pd.read_csv('D:/projects/customer/SI-GuidedProject-612102-1698683773/Data/Retail.csv',  encoding="ISO-8859-1")
-X = pd.read_csv('D:/projects/customer/SI-GuidedProject-612102-1698683773/Data/X.csv')
+rfm_data = pd.read_csv('Data/rfm.csv')
+df = pd.read_csv('Data/Retail.csv',  encoding="ISO-8859-1")
+X = pd.read_csv('Data/X.csv')
 
 def process():
-    df = pd.read_csv('D:/projects/customer/SI-GuidedProject-612102-1698683773/Data/Retail.csv',  encoding="ISO-8859-1")
+    df = pd.read_csv('Data/Retail.csv',  encoding="ISO-8859-1")
     df = df.dropna()
     df = df[df['InvoiceNo'].apply(lambda x: 'C' not in x)]
     df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate'],format='%d-%m-%Y %H.%M')
