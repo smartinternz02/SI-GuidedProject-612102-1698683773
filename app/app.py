@@ -13,12 +13,12 @@ from functions import *
 with open('D:\projects\customer\SI-GuidedProject-612102-1698683773\model.pkl', 'rb') as kmeans_file:
     model = pickle.load(kmeans_file)
 
-with open('D:\projects\customer\SI-GuidedProject-612102-1698683773\scaler.pkl', 'rb') as scaler_file:
+with open('D:/projects/customer/SI-GuidedProject-612102-1698683773/scaler.pkl', 'rb') as scaler_file:
     scaler = pickle.load(scaler_file)
 
 rfm_data = pd.read_csv('D:/projects/customer/SI-GuidedProject-612102-1698683773/Data/rfm.csv')
 df = pd.read_csv('D:/projects/customer/SI-GuidedProject-612102-1698683773/Data/Retail.csv',  encoding="ISO-8859-1")
-
+X = pd.read_csv('D:/projects/customer/SI-GuidedProject-612102-1698683773/Data/X.csv')
 # Create a Dash web application
 app = dash.Dash(__name__,external_stylesheets=[dbc.themes.COSMO])
 
@@ -90,30 +90,57 @@ def show_customer_details_callback(n_clicks, customer_id):
     return None
 
 
-@app.callback(Output('cluster-prediction-output', 'children'), Input('predict-cluster-button', 'n_clicks'), State[('r-input', 'value'),('f-input', 'value'),('m-input', 'value')])
-def predict_cluster(n_clicks, r_input,f_input,m_input):
-    if n_clicks and r_input and f_input and m_input:
-        # Parse the RFM values from the input
-        rfm_values = parse_rfm_input(r_input, f_input, m_input)  # Implement a function to parse RFM input
+@app.callback(Output('cluster-prediction-output', 'children'), Input('predict-cluster-button', 'n_clicks'), [State('r-input', 'value'), State('f-input', 'value'), State('m-input', 'value')])
+def predict_cluster(n_clicks, r_input, f_input, m_input):
+    print(f"n_clicks: {n_clicks}, r_input: {r_input}, f_input: {f_input}, m_input: {m_input}")
 
-        if rfm_values is not None:
-            # Predict the cluster based on the parsed RFM values
-            predicted_cluster, description = Predict_cluster(rfm_values)
+    if n_clicks and r_input is not None and f_input is not None and m_input is not None:
+        # Combine the input RFM values
+        try:
+            rfm_values = [float(r_input), float(f_input), float(m_input)]
+        except ValueError:
+            return html.P("Invalid input. Please enter valid numeric RFM values.")
 
-            # Create the layout to display cluster details
-            cluster_details_layout = html.Div([
-                html.Label("Predicted Cluster:"),
-                html.P(f"Cluster {predicted_cluster}"),
-                html.Label("Description:"),
-                html.P(description)
-            ])
+        # Display the user input
+        user_input_layout = html.Div([
+            html.Label("User Input RFM Values:"),
+            html.P(f"Recency: {rfm_values[0]}, Frequency: {rfm_values[1]}, Monetary: {rfm_values[2]}")
+        ])
 
-            return cluster_details_layout
-        else:
-            return html.P("Invalid RFM input. Please use the format: R:X, F:Y, M:Z")
+        # Combine the input RFM values
+        input_data = pd.DataFrame({'Recency': [rfm_values[0]], 'Frequency': [rfm_values[1]], 'Monetary': [rfm_values[2]]})
 
-    return None
+        print("Input data:")
+        print(input_data)
 
+        # Append input_data to rfm_data
+# Append input_data to rfm_data
+        combined_data = pd.concat([X,input_data], ignore_index=True)
+        print("Combined data:")
+        combined_data = combined_data[['Recency', 'Frequency', 'Monetary']]
+        print(combined_data.tail())
+        # Standardize the combined data using the same scaler
+        combined_data_scaled = scaler.transform(combined_data)
+
+        print(combined_data_scaled.head())
+        # Predict the cluster for the input RFM values
+        predicted_cluster = model.predict(combined_data_scaled)[-1]
+        print(f"Predicted cluster: {predicted_cluster}")
+
+        # Get the cluster centers
+        cluster_centers = model.cluster_centers_
+
+        print("Cluster centers:")
+        print(cluster_centers)
+        # Create the layout to display the predicted cluster
+        cluster_details_layout = html.Div([
+            html.Label("Predicted Cluster:"),
+            html.P(f"Cluster {predicted_cluster}")
+        ])
+
+        return [user_input_layout, cluster_details_layout]
+    else:
+        return html.P("Invalid input. Please enter valid RFM values.")
 
 segment_cluster_dropdown = dcc.Dropdown(
     id='segment-cluster-dropdown',

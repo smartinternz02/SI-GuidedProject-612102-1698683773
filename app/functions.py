@@ -9,11 +9,12 @@ from dash import html
 with open('D:\projects\customer\SI-GuidedProject-612102-1698683773\model.pkl', 'rb') as kmeans_file:
     model = pickle.load(kmeans_file)
 
-with open('D:\projects\customer\SI-GuidedProject-612102-1698683773\scaler.pkl', 'rb') as scaler_file:
+with open('D:/projects/customer/SI-GuidedProject-612102-1698683773/scaler.pkl', 'rb') as scaler_file:
     scaler = pickle.load(scaler_file)
 
 rfm_data = pd.read_csv('D:/projects/customer/SI-GuidedProject-612102-1698683773/Data/rfm.csv')
 df = pd.read_csv('D:/projects/customer/SI-GuidedProject-612102-1698683773/Data/Retail.csv',  encoding="ISO-8859-1")
+X = pd.read_csv('D:/projects/customer/SI-GuidedProject-612102-1698683773/Data/X.csv')
 
 def process():
     df = pd.read_csv('D:/projects/customer/SI-GuidedProject-612102-1698683773/Data/Retail.csv',  encoding="ISO-8859-1")
