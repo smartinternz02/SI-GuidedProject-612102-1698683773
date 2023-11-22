@@ -1,0 +1,12 @@
+# Environments
+app/.env
+app/.venv
+app/env/
+app/venv/
+app/ENV/
+app/env.bak/
+app/venv.bak/
+
+# Python cache directories
+__pycache__/
+app/__pycache__/
